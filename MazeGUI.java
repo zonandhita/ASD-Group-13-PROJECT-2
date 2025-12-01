@@ -1,4 +1,6 @@
 import javax.swing.*;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.List;
 
@@ -10,106 +12,119 @@ public class MazeGUI extends JFrame {
 
     // UI Components
     private JButton generateBtn, terrainBtn;
-    private JButton bfsBtn, dfsBtn, dijkstraBtn, aStarBtn;
+    private JButton bfsBtn, dfsBtn, dijkstraBtn, aStarBtn, compareBtn;
     private JButton resetBtn;
     private JSpinner widthSpinner, heightSpinner;
-    private JLabel statsLabel;
+
+    // Komponen Tabel
+    private JTable resultsTable;
+    private DefaultTableModel tableModel;
 
     public MazeGUI() {
-        setTitle("Maze Generator & Solver (Weighted Graph)");
+        try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); } catch (Exception e) {}
+
+        setTitle("Maze Generator & Solver - Final Dashboard");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
-        // --- 1. Top Panel (Controls) ---
-        JPanel topPanel = new JPanel(new GridLayout(2, 1));
+        // ========================================================
+        // 1. TOP PANEL (CONTROLS)
+        // ========================================================
+        JPanel topContainer = new JPanel(new GridLayout(2, 1));
 
-        // Baris 1: Settings
-        JPanel settingsPanel = new JPanel(new FlowLayout());
-        settingsPanel.add(new JLabel("W:"));
-        widthSpinner = new JSpinner(new SpinnerNumberModel(20, 5, 50, 1));
-        settingsPanel.add(widthSpinner);
+        // --- Baris 1: Settings ---
+        JPanel row1 = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 10));
+        row1.add(new JLabel("Width:"));
+        widthSpinner = new JSpinner(new SpinnerNumberModel(25, 5, 60, 1));
+        row1.add(widthSpinner);
 
-        settingsPanel.add(new JLabel("H:"));
-        heightSpinner = new JSpinner(new SpinnerNumberModel(20, 5, 50, 1));
-        settingsPanel.add(heightSpinner);
+        row1.add(new JLabel("Height:"));
+        heightSpinner = new JSpinner(new SpinnerNumberModel(25, 5, 60, 1));
+        row1.add(heightSpinner);
 
         generateBtn = new JButton("Generate Maze");
         generateBtn.addActionListener(e -> generateMaze());
-        settingsPanel.add(generateBtn);
+        row1.add(generateBtn);
 
         terrainBtn = new JButton("Randomize Terrain");
         terrainBtn.setEnabled(false);
         terrainBtn.addActionListener(e -> randomizeTerrain());
-        settingsPanel.add(terrainBtn);
+        row1.add(terrainBtn);
 
-        // Baris 2: Algorithm Buttons
-        JPanel algoPanel = new JPanel(new FlowLayout());
-        bfsBtn = new JButton("BFS");
-        bfsBtn.addActionListener(e -> solveMaze("BFS"));
+        // --- Baris 2: Algorithms ---
+        JPanel row2 = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 5));
+        bfsBtn = new JButton("BFS"); setupAlgoButton(bfsBtn, "BFS"); row2.add(bfsBtn);
+        dfsBtn = new JButton("DFS"); setupAlgoButton(dfsBtn, "DFS"); row2.add(dfsBtn);
+        dijkstraBtn = new JButton("Dijkstra"); setupAlgoButton(dijkstraBtn, "Dijkstra"); row2.add(dijkstraBtn);
+        aStarBtn = new JButton("A*"); setupAlgoButton(aStarBtn, "A*"); row2.add(aStarBtn);
 
-        dfsBtn = new JButton("DFS");
-        dfsBtn.addActionListener(e -> solveMaze("DFS"));
-
-        dijkstraBtn = new JButton("Dijkstra");
-        dijkstraBtn.addActionListener(e -> solveMaze("Dijkstra"));
-
-        aStarBtn = new JButton("A*");
-        aStarBtn.addActionListener(e -> solveMaze("A*"));
+        row2.add(Box.createHorizontalStrut(20));
+        compareBtn = new JButton("COMPARE ALL");
+        compareBtn.setBackground(new Color(255, 165, 0));
+        compareBtn.setFont(new Font("SansSerif", Font.BOLD, 11));
+        compareBtn.setEnabled(false);
+        compareBtn.addActionListener(e -> compareAllAlgorithms());
+        row2.add(compareBtn);
 
         resetBtn = new JButton("Reset");
         resetBtn.addActionListener(e -> resetAnimation());
+        row2.add(resetBtn);
 
-        algoPanel.add(bfsBtn);
-        algoPanel.add(dfsBtn);
-        algoPanel.add(dijkstraBtn);
-        algoPanel.add(aStarBtn);
-        algoPanel.add(resetBtn);
+        topContainer.add(row1);
+        topContainer.add(row2);
+        add(topContainer, BorderLayout.NORTH);
 
-        topPanel.add(settingsPanel);
-        topPanel.add(algoPanel);
-        add(topPanel, BorderLayout.NORTH);
-
-        // --- 2. Center (Maze Panel) ---
+        // ========================================================
+        // 2. CENTER PANEL (MAZE)
+        // ========================================================
         mazePanel = new MazePanel();
         add(mazePanel, BorderLayout.CENTER);
 
-        // --- 3. Bottom (Stats Label) ---
-        JPanel bottomPanel = new JPanel();
-        statsLabel = new JLabel("Ready. Generate a maze to start.");
-        statsLabel.setFont(new Font("Arial", Font.BOLD, 14));
-        bottomPanel.add(statsLabel);
-        add(bottomPanel, BorderLayout.SOUTH);
+        // ========================================================
+        // 3. BOTTOM PANEL (TABLE)
+        // ========================================================
+        String[] columnNames = {"Algorithm", "Path Steps", "Total Cost", "Time (ms)", "Status"};
+        tableModel = new DefaultTableModel(columnNames, 0);
+        resultsTable = new JTable(tableModel);
+        resultsTable.setEnabled(false);
+        resultsTable.setRowHeight(20);
 
-        // Disable buttons initially
-        enableControls(false);
-        generateBtn.setEnabled(true);
+        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
+        centerRenderer.setHorizontalAlignment(JLabel.CENTER);
+        for(int i=0; i<resultsTable.getColumnCount(); i++){
+            resultsTable.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
+        }
+
+        JScrollPane scrollPane = new JScrollPane(resultsTable);
+        scrollPane.setPreferredSize(new Dimension(0, 130));
+        add(scrollPane, BorderLayout.SOUTH);
 
         pack();
         setLocationRelativeTo(null);
     }
 
+    // ========================================================
+    // LOGIC METHODS
+    // ========================================================
+
     private void generateMaze() {
         int width = (Integer) widthSpinner.getValue();
         int height = (Integer) heightSpinner.getValue();
-
         MazeGenerator generator = new MazeGenerator(width, height);
         grid = generator.generateMaze();
         solver = new MazeSolver(grid);
-
         mazePanel.setMaze(grid);
-        statsLabel.setText("Maze Generated. Click 'Randomize Terrain' to add weights.");
-
+        randomizeTerrain();
         enableControls(true);
         resetAnimation();
+        tableModel.setRowCount(0);
     }
 
     private void randomizeTerrain() {
         if (grid == null) return;
-        mazePanel.resetAnimation();
-
+        resetAnimation();
         for (int y = 0; y < grid.length; y++) {
             for (int x = 0; x < grid[0].length; x++) {
-                // Keep start/end as grass
                 if ((x == 0 && y == 0) || (x == grid[0].length-1 && y == grid.length-1)) {
                     grid[y][x].weight = 1;
                 } else {
@@ -118,23 +133,18 @@ public class MazeGUI extends JFrame {
             }
         }
         mazePanel.repaint();
-        statsLabel.setText("Terrain Randomized! Green=1 (Grass), Brown=5 (Mud), Blue=10 (Water)");
     }
 
     private void solveMaze(String algorithm) {
         if (grid == null) return;
-
-        // Stop timer lama jika masih jalan
-        if (animationTimer != null && animationTimer.isRunning()) animationTimer.stop();
+        stopTimer();
         mazePanel.resetAnimation();
 
         Cell start = grid[0][0];
         Cell end = grid[grid.length - 1][grid[0].length - 1];
         List<Cell> path = null;
-
         long startTime = System.nanoTime();
 
-        // Solve algoritma
         switch (algorithm) {
             case "BFS": path = solver.solveBFS(start, end); break;
             case "DFS": path = solver.solveDFS(start, end); break;
@@ -145,49 +155,94 @@ public class MazeGUI extends JFrame {
         long duration = (System.nanoTime() - startTime) / 1_000_000;
 
         if (path != null && !path.isEmpty()) {
-            int totalCost = 0;
-            for (Cell c : path) totalCost += c.weight;
-
-            // Tampilkan text status (sedang animasi)
-            statsLabel.setText(String.format("[%s] Steps: %d | Total Cost: %d | Time: %dms (Animating...)",
-                    algorithm, path.size(), totalCost, duration));
-
-            if (algorithm.equals("BFS") || algorithm.equals("DFS")) statsLabel.setForeground(Color.RED);
-            else statsLabel.setForeground(new Color(0, 100, 0));
-
-            // Set data path ke panel
+            int cost = calculateCost(path);
+            tableModel.addRow(new Object[]{algorithm, path.size(), cost, duration, "Animating..."});
             mazePanel.setPath(path);
-
-            // JALANKAN ANIMASI STEP BY STEP
             runPathAnimation(path.size());
-
         } else {
-            statsLabel.setText("No path found!");
+            JOptionPane.showMessageDialog(this, "No path found!");
         }
     }
 
+    private void compareAllAlgorithms() {
+        if (grid == null) return;
+        stopTimer();
+        mazePanel.resetAnimation();
+        tableModel.setRowCount(0);
+        Cell start = grid[0][0];
+        Cell end = grid[grid.length - 1][grid[0].length - 1];
+
+        runAndRecord("BFS", () -> solver.solveBFS(start, end));
+        runAndRecord("DFS", () -> solver.solveDFS(start, end));
+        runAndRecord("Dijkstra", () -> solver.solveDijkstra(start, end));
+        runAndRecord("A*", () -> solver.solveAStar(start, end));
+        JOptionPane.showMessageDialog(this, "Comparison Done! Check table below.");
+    }
+
+    private void runAndRecord(String name, AlgorithmRunner runner) {
+        long startT = System.nanoTime();
+        List<Cell> path = runner.run();
+        long endT = System.nanoTime();
+        double durationMs = (endT - startT) / 1_000_000.0;
+        if (path != null && !path.isEmpty()) {
+            int cost = calculateCost(path);
+            tableModel.addRow(new Object[]{name, path.size(), cost, String.format("%.2f", durationMs), "Done"});
+        } else {
+            tableModel.addRow(new Object[]{name, "-", "-", "-", "Failed"});
+        }
+    }
+
+    private int calculateCost(List<Cell> path) {
+        int total = 0;
+        for (Cell c : path) total += c.weight;
+        return total;
+    }
+
+    // ========================================================
+    // UPDATE: ANIMASI LEBIH LAMBAT (SPEED CONTROL)
+    // ========================================================
     private void runPathAnimation(int pathSize) {
-        // Delay 30ms per langkah (bisa diubah biar lebih lambat/cepat)
-        animationTimer = new Timer(30, e -> {
-            mazePanel.incrementPathIndex(); // Memanggil method di MazePanel
+        if (animationTimer != null && animationTimer.isRunning()) animationTimer.stop();
+        final int[] stepsDrawn = {0};
+
+        // --- UBAH ANGKA INI UNTUK MENGATUR KECEPATAN ---
+        // 10 = Cepat Sekali
+        // 50 = Sedang (Santai)
+        // 100 = Lambat
+        int speedDelay = 50;
+        // -----------------------------------------------
+
+        animationTimer = new Timer(speedDelay, e -> {
+            mazePanel.incrementPathIndex();
+            stepsDrawn[0]++;
+
+            if (stepsDrawn[0] >= pathSize + 5) {
+                ((Timer)e.getSource()).stop();
+                if (tableModel.getRowCount() > 0) {
+                    int lastRow = tableModel.getRowCount() - 1;
+                    Object currentStatus = tableModel.getValueAt(lastRow, 4);
+                    if ("Animating...".equals(currentStatus)) {
+                        tableModel.setValueAt("Finished", lastRow, 4);
+                    }
+                }
+            }
         });
 
         animationTimer.start();
+    }
 
-        // Timer untuk memberhentikan animasi ketika sudah selesai
-        Timer stopTimer = new Timer(30 * pathSize + 500, e -> {
-            if (animationTimer != null) animationTimer.stop();
-            String text = statsLabel.getText().replace("(Animating...)", "(Done)");
-            statsLabel.setText(text);
-        });
-        stopTimer.setRepeats(false);
-        stopTimer.start();
+    private void stopTimer() {
+        if (animationTimer != null) animationTimer.stop();
     }
 
     private void resetAnimation() {
-        if (animationTimer != null) animationTimer.stop();
+        stopTimer();
         mazePanel.resetAnimation();
-        statsLabel.setText("Path cleared.");
+    }
+
+    private void setupAlgoButton(JButton btn, String algo) {
+        btn.setEnabled(false);
+        btn.addActionListener(e -> solveMaze(algo));
     }
 
     private void enableControls(boolean enable) {
@@ -196,6 +251,10 @@ public class MazeGUI extends JFrame {
         dfsBtn.setEnabled(enable);
         dijkstraBtn.setEnabled(enable);
         aStarBtn.setEnabled(enable);
-        resetBtn.setEnabled(enable);
+        compareBtn.setEnabled(enable);
+    }
+
+    interface AlgorithmRunner {
+        List<Cell> run();
     }
 }
