@@ -1,4 +1,7 @@
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+import java.util.Stack;
 
 public class MazeGenerator {
     private int width;
@@ -9,103 +12,90 @@ public class MazeGenerator {
     public MazeGenerator(int width, int height) {
         this.width = width;
         this.height = height;
-        this.grid = new Cell[height][width];
-        initializeGrid();
-    }
-
-    private void initializeGrid() {
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                grid[y][x] = new Cell(x, y);
-            }
-        }
     }
 
     public Cell[][] generateMaze() {
-        // Prim's Algorithm
-        List<Wall> walls = new ArrayList<>();
-        Cell start = grid[0][0];
-        start.setVisited(true);
+        // ... (Kode Inisialisasi & DFS Backtracker yang lama TETAP SAMA di sini) ...
+        // Copy paste bagian generateMaze() dari jawaban sebelumnya sampai loop Stack selesai
 
-        addWallsToList(start, walls);
-
-        while (!walls.isEmpty()) {
-            Wall wall = walls.remove(random.nextInt(walls.size()));
-            Cell cell1 = wall.getCell1();
-            Cell cell2 = wall.getCell2();
-
-            if (cell1.isVisited() != cell2.isVisited()) {
-                removeWallBetween(cell1, cell2);
-                cell1.addNeighbor(cell2);
-                cell2.addNeighbor(cell1);
-
-                Cell unvisited = cell1.isVisited() ? cell2 : cell1;
-                unvisited.setVisited(true);
-                addWallsToList(unvisited, walls);
+        grid = new Cell[width][height];
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                grid[x][y] = new Cell(x, y);
             }
         }
 
-        // Reset visited for pathfinding
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                grid[y][x].setVisited(false);
+        Stack<Cell> stack = new Stack<>();
+        Cell current = grid[0][0];
+        current.setVisited(true);
+        stack.push(current);
+
+        while (!stack.isEmpty()) {
+            current = stack.peek();
+            Cell next = getUnvisitedNeighbor(current);
+            if (next != null) {
+                next.setVisited(true);
+                removeWalls(current, next);
+                stack.push(next);
+            } else {
+                stack.pop();
             }
         }
 
+        // --- TAMBAHAN BARU: MEMBUAT LOOP (Rute Alternatif) ---
+        addLoops(10); // Hapus 10% tembok sisa agar ada banyak jalan
+
+        // Reset visited agar siap untuk searching
+        resetVisitedStatus();
         return grid;
     }
 
-    private void addWallsToList(Cell cell, List<Wall> walls) {
-        int x = cell.getX();
-        int y = cell.getY();
+    // Method Baru: Menghancurkan tembok acak untuk membuat rute ganda
+    private void addLoops(int percentage) {
+        int totalCells = width * height;
+        int wallsToRemove = (totalCells * percentage) / 100;
 
-        // Top
-        if (y > 0 && !grid[y - 1][x].isVisited()) {
-            walls.add(new Wall(cell, grid[y - 1][x]));
-        }
-        // Right
-        if (x < width - 1 && !grid[y][x + 1].isVisited()) {
-            walls.add(new Wall(cell, grid[y][x + 1]));
-        }
-        // Bottom
-        if (y < height - 1 && !grid[y + 1][x].isVisited()) {
-            walls.add(new Wall(cell, grid[y + 1][x]));
-        }
-        // Left
-        if (x > 0 && !grid[y][x - 1].isVisited()) {
-            walls.add(new Wall(cell, grid[y][x - 1]));
-        }
-    }
+        for (int i = 0; i < wallsToRemove; i++) {
+            int x = random.nextInt(width - 1); // Hindari pinggir paling kanan
+            int y = random.nextInt(height - 1); // Hindari pinggir paling bawah
 
-    private void removeWallBetween(Cell cell1, Cell cell2) {
-        int dx = cell2.getX() - cell1.getX();
-        int dy = cell2.getY() - cell1.getY();
-
-        if (dx == 1) { // cell2 is to the right
-            cell1.setRightWall(false);
-            cell2.setLeftWall(false);
-        } else if (dx == -1) { // cell2 is to the left
-            cell1.setLeftWall(false);
-            cell2.setRightWall(false);
-        } else if (dy == 1) { // cell2 is below
-            cell1.setBottomWall(false);
-            cell2.setTopWall(false);
-        } else if (dy == -1) { // cell2 is above
-            cell1.setTopWall(false);
-            cell2.setBottomWall(false);
+            // Cek tembok kanan atau bawah, lalu hancurkan
+            if (random.nextBoolean()) {
+                // Hancurkan tembok kanan antara (x,y) dan (x+1,y)
+                grid[x][y].walls[1] = false;
+                grid[x+1][y].walls[3] = false;
+            } else {
+                // Hancurkan tembok bawah antara (x,y) dan (x,y+1)
+                grid[x][y].walls[2] = false;
+                grid[x][y+1].walls[0] = false;
+            }
         }
     }
 
-    private static class Wall {
-        private Cell cell1;
-        private Cell cell2;
+    // ... (Sisa method getUnvisitedNeighbor, removeWalls, resetVisitedStatus TETAP SAMA) ...
 
-        public Wall(Cell cell1, Cell cell2) {
-            this.cell1 = cell1;
-            this.cell2 = cell2;
-        }
+    private Cell getUnvisitedNeighbor(Cell cell) {
+        List<Cell> neighbors = new ArrayList<>();
+        int x = cell.x;
+        int y = cell.y;
+        if (y > 0 && !grid[x][y - 1].isVisited()) neighbors.add(grid[x][y - 1]);
+        if (x < width - 1 && !grid[x + 1][y].isVisited()) neighbors.add(grid[x + 1][y]);
+        if (y < height - 1 && !grid[x][y + 1].isVisited()) neighbors.add(grid[x][y + 1]);
+        if (x > 0 && !grid[x - 1][y].isVisited()) neighbors.add(grid[x - 1][y]);
+        if (neighbors.size() > 0) return neighbors.get(random.nextInt(neighbors.size()));
+        else return null;
+    }
 
-        public Cell getCell1() { return cell1; }
-        public Cell getCell2() { return cell2; }
+    private void removeWalls(Cell a, Cell b) {
+        int x = a.x - b.x;
+        int y = a.y - b.y;
+        if (x == 1) { a.walls[3] = false; b.walls[1] = false; }
+        else if (x == -1) { a.walls[1] = false; b.walls[3] = false; }
+        if (y == 1) { a.walls[0] = false; b.walls[2] = false; }
+        else if (y == -1) { a.walls[2] = false; b.walls[0] = false; }
+    }
+
+    private void resetVisitedStatus() {
+        for (int x = 0; x < width; x++) for (int y = 0; y < height; y++) grid[x][y].setVisited(false);
     }
 }
