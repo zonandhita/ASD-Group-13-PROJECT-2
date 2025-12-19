@@ -149,7 +149,6 @@ public class MazeGUI extends JFrame {
 
         mazePanel.setPath(path);
 
-        // ANIMASI DENGAN CEK ENDING
         animationTimer = new Timer(20, e -> {
             mazePanel.incrementPathIndex();
             if (mazePanel.getPathDrawLimit() >= path.size()) {
