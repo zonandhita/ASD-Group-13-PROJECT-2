@@ -14,7 +14,7 @@ public class MazePanel extends JPanel {
     private final Color COLOR_END = new Color(255, 0, 0);
 
     public MazePanel() {
-        setBackground(new Color(15, 15, 25)); // Background gelap elegan
+        setBackground(new Color(15, 15, 25));
     }
 
     public void setMaze(Cell[][] grid) {
@@ -34,6 +34,11 @@ public class MazePanel extends JPanel {
             pathDrawLimit++;
             repaint();
         }
+    }
+
+    // METHOD BARU: Digunakan MazeGUI untuk cek status animasi
+    public int getPathDrawLimit() {
+        return pathDrawLimit;
     }
 
     public void resetAnimation() {
@@ -61,46 +66,36 @@ public class MazePanel extends JPanel {
 
         int cols = grid.length;
         int rows = grid[0].length;
-
-        // PERBAIKAN: Margin dikurangi (dari 80 ke 20) agar ukuran maze lebih besar
         cellSize = Math.min((getWidth() - 20) / cols, (getHeight() - 20) / rows);
         if (cellSize < 5) cellSize = 5;
 
-        // LOGIKA PEMUSATAN: Hitung sisa ruang (offset)
         int mazeWidth = cols * cellSize;
         int mazeHeight = rows * cellSize;
         int offsetX = (getWidth() - mazeWidth) / 2;
         int offsetY = (getHeight() - mazeHeight) / 2;
 
-        // Gambar Grid dan Terrain
         for (int x = 0; x < cols; x++) {
             for (int y = 0; y < rows; y++) {
                 Cell cell = grid[x][y];
                 int px = offsetX + (x * cellSize);
                 int py = offsetY + (y * cellSize);
-
                 drawStyledCell(g2d, cell, px, py, cellSize);
             }
         }
 
-        // Gambar Start & End Marker
         drawMarkers(g2d, offsetX, offsetY, cols, rows);
 
-        // Gambar Path Animasi
         if (currentPath != null && !currentPath.isEmpty()) {
             drawAnimatedPath(g2d, offsetX, offsetY);
         }
     }
 
     private void drawStyledCell(Graphics2D g2d, Cell cell, int px, int py, int size) {
-        // Warna Terrain
-        if (cell.weight == 1) g2d.setColor(new Color(144, 238, 144, 200)); // Grass
-        else if (cell.weight == 5) g2d.setColor(new Color(139, 69, 19, 200)); // Mud
-        else g2d.setColor(new Color(30, 144, 255, 200)); // Water
+        if (cell.weight == 1) g2d.setColor(new Color(144, 238, 144, 200));
+        else if (cell.weight == 5) g2d.setColor(new Color(139, 69, 19, 200));
+        else g2d.setColor(new Color(30, 144, 255, 200));
 
         g2d.fillRect(px, py, size, size);
-
-        // Walls
         g2d.setColor(new Color(0, 0, 0));
         g2d.setStroke(new BasicStroke(2));
         if (cell.walls[0]) g2d.drawLine(px, py, px + size, py);
@@ -111,10 +106,8 @@ public class MazePanel extends JPanel {
 
     private void drawMarkers(Graphics2D g2d, int ox, int oy, int cols, int rows) {
         int r = (int)(cellSize * 0.7);
-        // Start
         g2d.setColor(COLOR_START);
         g2d.fillOval(ox + (cellSize - r) / 2, oy + (cellSize - r) / 2, r, r);
-        // End
         g2d.setColor(COLOR_END);
         int ex = ox + (cols - 1) * cellSize;
         int ey = oy + (rows - 1) * cellSize;
