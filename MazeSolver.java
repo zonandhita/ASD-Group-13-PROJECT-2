@@ -6,16 +6,10 @@ public class MazeSolver {
 
     public MazeSolver(Cell[][] grid) {
         this.grid = grid;
-        // Penyesuaian dimensi: grid.length biasanya adalah lebar (kolom),
-        // sedangkan grid[0].length adalah tinggi (baris).
         this.cols = grid.length;
         this.rows = grid[0].length;
     }
 
-    /**
-     * BFS (Breadth-First Search): Mencari jalur terpendek pada graf tanpa bobot.
-     * Menggunakan Queue (FIFO) untuk mengeksplorasi tetangga secara merata ke segala arah.
-     */
     public List<Cell> solveBFS(Cell start, Cell end) {
         resetVisited();
         Queue<Cell> queue = new LinkedList<>();
@@ -41,10 +35,6 @@ public class MazeSolver {
         return new ArrayList<>();
     }
 
-    /**
-     * DFS (Depth-First Search): Menelusuri satu jalur sedalam mungkin sebelum berbalik arah (backtrack).
-     * Menggunakan Stack (LIFO). Jalur yang dihasilkan seringkali bukan yang terpendek.
-     */
     public List<Cell> solveDFS(Cell start, Cell end) {
         resetVisited();
         Stack<Cell> stack = new Stack<>();
@@ -70,16 +60,11 @@ public class MazeSolver {
         return new ArrayList<>();
     }
 
-    /**
-     * Dijkstra: Mencari jalur dengan total bobot (cost) terkecil.
-     * Sangat efektif jika labirin memiliki medan yang berbeda (seperti air atau lumpur).
-     */
     public List<Cell> solveDijkstra(Cell start, Cell end) {
         resetVisited();
         Map<Cell, Integer> costMap = new HashMap<>();
         Map<Cell, Cell> parentMap = new HashMap<>();
 
-        // PriorityQueue memastikan kita selalu memproses sel dengan akumulasi bobot terendah dahulu
         PriorityQueue<Cell> pq = new PriorityQueue<>(Comparator.comparingInt(c -> costMap.getOrDefault(c, Integer.MAX_VALUE)));
 
         costMap.put(start, 0);
@@ -99,7 +84,6 @@ public class MazeSolver {
                 if (newCost < costMap.getOrDefault(neighbor, Integer.MAX_VALUE)) {
                     costMap.put(neighbor, newCost);
                     parentMap.put(neighbor, current);
-                    // Update posisi di PriorityQueue
                     pq.remove(neighbor);
                     pq.offer(neighbor);
                 }
@@ -108,20 +92,15 @@ public class MazeSolver {
         return new ArrayList<>();
     }
 
-    /**
-     * A* (A-Star): Versi optimasi dari Dijkstra yang menggunakan Heuristik (jarak Manhattan).
-     * Algoritma ini "cerdas" karena memprioritaskan sel yang posisinya secara geografis mendekati target.
-     */
     public List<Cell> solveAStar(Cell start, Cell end) {
         resetVisited();
-        Map<Cell, Integer> gScore = new HashMap<>(); // Jarak dari start ke sel saat ini
+        Map<Cell, Integer> gScore = new HashMap<>();
         Map<Cell, Cell> parentMap = new HashMap<>();
 
         PriorityQueue<Cell> pq = new PriorityQueue<>(Comparator.comparingInt(c -> {
             int g = gScore.getOrDefault(c, Integer.MAX_VALUE);
-            // Heuristik: Estimasi jarak sisa menggunakan rumus Manhattan (x + y)
             int h = Math.abs(c.x - end.x) + Math.abs(c.y - end.y);
-            return g + h; // Nilai f = g + h
+            return g + h;
         }));
 
         gScore.put(start, 0);
@@ -149,21 +128,14 @@ public class MazeSolver {
         return new ArrayList<>();
     }
 
-    /**
-     * Menyeleksi sel tetangga yang bisa dilewati (tidak terhalang tembok).
-     */
     private List<Cell> getValidNeighbors(Cell c) {
         List<Cell> neighbors = new ArrayList<>();
         int x = c.x;
         int y = c.y;
 
-        // Cek Tembok Atas
         if (!c.walls[0] && isValid(y - 1, x)) neighbors.add(grid[x][y - 1]);
-        // Cek Tembok Kanan
         if (!c.walls[1] && isValid(y, x + 1)) neighbors.add(grid[x + 1][y]);
-        // Cek Tembok Bawah
         if (!c.walls[2] && isValid(y + 1, x)) neighbors.add(grid[x][y + 1]);
-        // Cek Tembok Kiri
         if (!c.walls[3] && isValid(y, x - 1)) neighbors.add(grid[x - 1][y]);
 
         return neighbors;
@@ -173,14 +145,11 @@ public class MazeSolver {
         return c >= 0 && c < cols && r >= 0 && r < rows;
     }
 
-    /**
-     * Menelusuri balik dari sel target ke sel awal melalui parentMap untuk membentuk urutan jalur.
-     */
     private List<Cell> reconstructPath(Map<Cell, Cell> parentMap, Cell end) {
         List<Cell> path = new ArrayList<>();
         Cell current = end;
         while (current != null) {
-            path.add(0, current); // Tambahkan ke depan agar urutan menjadi Start -> End
+            path.add(0, current);
             current = parentMap.get(current);
         }
         return path;
