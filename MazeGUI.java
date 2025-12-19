@@ -1,268 +1,173 @@
 import javax.swing.*;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.List;
 
 public class MazeGUI extends JFrame {
     private MazePanel mazePanel;
-    private Cell[][] grid;
     private MazeSolver solver;
     private Timer animationTimer;
 
-    // Komponen Kontrol
-    private JButton generateBtn, terrainBtn;
-    private JButton bfsBtn, dfsBtn, dijkstraBtn, aStarBtn, compareBtn;
-    private JButton resetBtn;
+    private JButton generateBtn, terrainBtn, bfsBtn, dfsBtn, dijkstraBtn, aStarBtn, resetBtn;
     private JSpinner widthSpinner, heightSpinner;
-
-    // Komponen Tabel Statistik
-    private JTable resultsTable;
-    private DefaultTableModel tableModel;
+    private JLabel statsLabel;
 
     public MazeGUI() {
-        // Mengatur tema jendela agar sesuai dengan sistem operasi pengguna
-        try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); } catch (Exception e) {}
-
-        setTitle("Labirin Dashboard - Analisis Algoritma");
+        setTitle("🏰 Maze Adventure - The Lost Treasure of Eldoria");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLayout(new BorderLayout(10, 10)); // Memberikan jarak antar komponen
+        setLayout(new BorderLayout());
+        getContentPane().setBackground(new Color(25, 25, 35));
 
-        // ========================================================
-        // 1. SIDE PANEL (DASHBOARD SAMPING)
-        // ========================================================
-        JPanel sidePanel = new JPanel();
-        sidePanel.setLayout(new BoxLayout(sidePanel, BoxLayout.Y_AXIS));
-        sidePanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        sidePanel.setPreferredSize(new Dimension(220, 0));
-
-        // --- Grup Pengaturan ---
-        JPanel configPanel = new JPanel(new GridLayout(0, 2, 5, 5));
-        configPanel.setBorder(BorderFactory.createTitledBorder("Pengaturan Grid"));
-        configPanel.setMaximumSize(new Dimension(200, 100));
-
-        configPanel.add(new JLabel("Lebar:"));
-        widthSpinner = new JSpinner(new SpinnerNumberModel(25, 5, 60, 1));
-        configPanel.add(widthSpinner);
-
-        configPanel.add(new JLabel("Tinggi:"));
-        heightSpinner = new JSpinner(new SpinnerNumberModel(25, 5, 60, 1));
-        configPanel.add(heightSpinner);
-
-        // --- Tombol Aksi Utama ---
-        generateBtn = new JButton("Buat Labirin");
-        generateBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
-        generateBtn.addActionListener(e -> generateMaze());
-
-        terrainBtn = new JButton("Acak Medan");
-        terrainBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
-        terrainBtn.setEnabled(false);
-        terrainBtn.addActionListener(e -> randomizeTerrain());
-
-        // --- Grup Algoritma ---
-        JPanel algoPanel = new JPanel(new GridLayout(0, 1, 5, 5));
-        algoPanel.setBorder(BorderFactory.createTitledBorder("Algoritma"));
-
-        bfsBtn = new JButton("BFS"); setupAlgoButton(bfsBtn, "BFS"); algoPanel.add(bfsBtn);
-        dfsBtn = new JButton("DFS"); setupAlgoButton(dfsBtn, "DFS"); algoPanel.add(dfsBtn);
-        dijkstraBtn = new JButton("Dijkstra"); setupAlgoButton(dijkstraBtn, "Dijkstra"); algoPanel.add(dijkstraBtn);
-        aStarBtn = new JButton("A*"); setupAlgoButton(aStarBtn, "A*"); algoPanel.add(aStarBtn);
-
-        compareBtn = new JButton("BANDINGKAN SEMUA");
-        compareBtn.setBackground(new Color(255, 165, 0));
-        compareBtn.setFont(new Font("SansSerif", Font.BOLD, 10));
-        compareBtn.setEnabled(false);
-        compareBtn.addActionListener(e -> compareAllAlgorithms());
-
-        resetBtn = new JButton("Reset Visual");
-        resetBtn.addActionListener(e -> resetAnimation());
-
-        // Menyusun komponen ke panel samping
-        sidePanel.add(configPanel);
-        sidePanel.add(Box.createRigidArea(new Dimension(0, 10)));
-        sidePanel.add(generateBtn);
-        sidePanel.add(Box.createRigidArea(new Dimension(0, 5)));
-        sidePanel.add(terrainBtn);
-        sidePanel.add(Box.createRigidArea(new Dimension(0, 15)));
-        sidePanel.add(algoPanel);
-        sidePanel.add(Box.createRigidArea(new Dimension(0, 10)));
-        sidePanel.add(compareBtn);
-        sidePanel.add(Box.createVerticalGlue()); // Mendorong tombol reset ke bawah
-        sidePanel.add(resetBtn);
-
-        add(sidePanel, BorderLayout.WEST);
-
-        // ========================================================
-        // 2. CENTER PANEL (AREA LABIRIN)
-        // ========================================================
-        mazePanel = new MazePanel();
-        add(mazePanel, BorderLayout.CENTER);
-
-        // ========================================================
-        // 3. BOTTOM PANEL (TABEL HASIL)
-        // ========================================================
-        String[] columnNames = {"Algoritma", "Langkah", "Bobot", "Waktu (ms)", "Status"};
-        tableModel = new DefaultTableModel(columnNames, 0);
-        resultsTable = new JTable(tableModel);
-        resultsTable.setEnabled(false);
-        resultsTable.setRowHeight(20);
-
-        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
-        centerRenderer.setHorizontalAlignment(JLabel.CENTER);
-        for(int i=0; i<resultsTable.getColumnCount(); i++){
-            resultsTable.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
-        }
-
-        JScrollPane scrollPane = new JScrollPane(resultsTable);
-        scrollPane.setPreferredSize(new Dimension(0, 120));
-        add(scrollPane, BorderLayout.SOUTH);
+        createTopPanel();
+        createCenterPanel();
+        createBottomPanel();
 
         pack();
-        setMinimumSize(new Dimension(800, 600)); // Ukuran minimal agar dashboard samping pas
-        setLocationRelativeTo(null);
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
+    }
+
+    private void createTopPanel() {
+        JPanel topPanel = new JPanel(new GridLayout(2, 1, 5, 5));
+        topPanel.setBackground(new Color(35, 35, 50));
+        topPanel.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
+
+        // Row 1: Settings
+        JPanel settingsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 25, 5));
+        settingsPanel.setOpaque(false);
+
+        styleLabel(settingsPanel, "Width:");
+        widthSpinner = new JSpinner(new SpinnerNumberModel(30, 10, 60, 1));
+        settingsPanel.add(widthSpinner);
+
+        styleLabel(settingsPanel, "Height:");
+        heightSpinner = new JSpinner(new SpinnerNumberModel(25, 10, 50, 1));
+        settingsPanel.add(heightSpinner);
+
+        generateBtn = createEldoriaButton("🏰 BUAT LABIRIN", new Color(212, 175, 55));
+        generateBtn.addActionListener(e -> generateMaze());
+        settingsPanel.add(generateBtn);
+
+        terrainBtn = createEldoriaButton("🌍 ACAK MEDAN", new Color(46, 139, 87));
+        terrainBtn.setEnabled(false);
+        terrainBtn.addActionListener(e -> randomizeTerrain());
+        settingsPanel.add(terrainBtn);
+
+        // Row 2: Algorithms
+        JPanel algoPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 12, 5));
+        algoPanel.setOpaque(false);
+
+        bfsBtn = createEldoriaButton("🔵 BFS", new Color(100, 149, 237));
+        dfsBtn = createEldoriaButton("🟣 DFS", new Color(138, 43, 226));
+        dijkstraBtn = createEldoriaButton("🟠 DIJKSTRA", new Color(210, 105, 30));
+        aStarBtn = createEldoriaButton("⭐ A*", new Color(218, 165, 32));
+        resetBtn = createEldoriaButton("🔄 RESET", new Color(178, 34, 34));
+
+        JButton[] algos = {bfsBtn, dfsBtn, dijkstraBtn, aStarBtn, resetBtn};
+        for(JButton b : algos) {
+            b.setEnabled(false);
+            algoPanel.add(b);
+        }
+
+        bfsBtn.addActionListener(e -> solveMaze("BFS"));
+        dfsBtn.addActionListener(e -> solveMaze("DFS"));
+        dijkstraBtn.addActionListener(e -> solveMaze("Dijkstra"));
+        aStarBtn.addActionListener(e -> solveMaze("A*"));
+        resetBtn.addActionListener(e -> resetAnimation());
+
+        topPanel.add(settingsPanel);
+        topPanel.add(algoPanel);
+        add(topPanel, BorderLayout.NORTH);
+    }
+
+    private JButton createEldoriaButton(String text, Color baseColor) {
+        JButton btn = new JButton(text);
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        btn.setBackground(baseColor);
+        // PERBAIKAN: Font diubah menjadi Hitam agar kelihatan
+        btn.setForeground(Color.BLACK);
+        btn.setFocusPainted(false);
+        btn.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(255, 215, 0), 1),
+                BorderFactory.createEmptyBorder(8, 15, 8, 15)
+        ));
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        btn.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) { btn.setBackground(baseColor.brighter()); }
+            public void mouseExited(java.awt.event.MouseEvent evt) { btn.setBackground(baseColor); }
+        });
+        return btn;
+    }
+
+    private void styleLabel(JPanel p, String txt) {
+        JLabel l = new JLabel(txt);
+        l.setForeground(new Color(212, 175, 55));
+        l.setFont(new Font("Georgia", Font.BOLD, 14));
+        p.add(l);
+    }
+
+    private void createCenterPanel() {
+        mazePanel = new MazePanel();
+        JScrollPane scrollPane = new JScrollPane(mazePanel);
+        scrollPane.setBorder(BorderFactory.createLineBorder(new Color(212, 175, 55), 2));
+        scrollPane.getViewport().setBackground(new Color(15, 15, 25));
+        add(scrollPane, BorderLayout.CENTER);
+    }
+
+    private void createBottomPanel() {
+        JPanel bottomPanel = new JPanel();
+        bottomPanel.setBackground(new Color(20, 20, 30));
+        statsLabel = new JLabel("Siap berpetualang, Alex? Buat labirin dulu!");
+        statsLabel.setForeground(Color.WHITE);
+        statsLabel.setFont(new Font("Monospaced", Font.BOLD, 16));
+        bottomPanel.add(statsLabel);
+        add(bottomPanel, BorderLayout.SOUTH);
     }
 
     private void generateMaze() {
-        int width = (Integer) widthSpinner.getValue();
-        int height = (Integer) heightSpinner.getValue();
-        MazeGenerator generator = new MazeGenerator(width, height);
-        grid = generator.generateMaze();
-        solver = new MazeSolver(grid);
-        mazePanel.setMaze(grid);
-        randomizeTerrain();
-        enableControls(true);
-        resetAnimation();
-        tableModel.setRowCount(0);
+        int w = (int) widthSpinner.getValue();
+        int h = (int) heightSpinner.getValue();
+        mazePanel.setMaze(new MazeGenerator(w, h).generateMaze());
+        solver = new MazeSolver(mazePanel.getGrid());
+        toggleButtons(true);
+        statsLabel.setText("Labirin Eldoria terwujud! (" + w + "x" + h + ")");
+        if(animationTimer != null) animationTimer.stop();
+    }
+
+    private void solveMaze(String algorithm) {
+        if (animationTimer != null) animationTimer.stop();
+        mazePanel.resetAnimation();
+        List<Cell> path;
+        Cell start = mazePanel.getStartCell();
+        Cell end = mazePanel.getEndCell();
+
+        if(algorithm.equals("BFS")) path = solver.solveBFS(start, end);
+        else if(algorithm.equals("DFS")) path = solver.solveDFS(start, end);
+        else if(algorithm.equals("Dijkstra")) path = solver.solveDijkstra(start, end);
+        else path = solver.solveAStar(start, end);
+
+        if (path.isEmpty()) { statsLabel.setText("Tidak ada jalan!"); return; }
+
+        int totalCost = path.stream().mapToInt(c -> c.weight).sum();
+        statsLabel.setText(algorithm + " | Langkah: " + path.size() + " | Energi: " + totalCost);
+        mazePanel.setPath(path);
+        animationTimer = new Timer(30, e -> mazePanel.incrementPathIndex());
+        animationTimer.start();
     }
 
     private void randomizeTerrain() {
-        if (grid == null) return;
-        resetAnimation();
-        for (int y = 0; y < grid[0].length; y++) {
-            for (int x = 0; x < grid.length; x++) {
-                if ((x == 0 && y == 0) || (x == grid.length-1 && y == grid[0].length-1)) {
-                    grid[x][y].weight = 1;
-                } else {
-                    grid[x][y].setRandomTerrain();
-                }
-            }
+        for (Cell[] row : mazePanel.getGrid()) {
+            for (Cell c : row) c.setRandomTerrain();
         }
         mazePanel.repaint();
     }
 
-    private void solveMaze(String algorithm) {
-        if (grid == null) return;
-        stopTimer();
-        mazePanel.resetAnimation();
-
-        Cell start = grid[0][0];
-        Cell end = grid[grid.length - 1][grid[0].length - 1];
-        List<Cell> path = null;
-        long startTime = System.nanoTime();
-
-        switch (algorithm) {
-            case "BFS": path = solver.solveBFS(start, end); break;
-            case "DFS": path = solver.solveDFS(start, end); break;
-            case "Dijkstra": path = solver.solveDijkstra(start, end); break;
-            case "A*": path = solver.solveAStar(start, end); break;
-        }
-
-        long duration = (System.nanoTime() - startTime) / 1_000_000;
-
-        if (path != null && !path.isEmpty()) {
-            int cost = calculateCost(path);
-            tableModel.addRow(new Object[]{algorithm, path.size(), cost, duration, "Animating..."});
-            mazePanel.setPath(path);
-            runPathAnimation(path.size());
-        } else {
-            JOptionPane.showMessageDialog(this, "Jalur tidak ditemukan!");
-        }
-    }
-
-    private void compareAllAlgorithms() {
-        if (grid == null) return;
-        stopTimer();
-        mazePanel.resetAnimation();
-        tableModel.setRowCount(0);
-        Cell start = grid[0][0];
-        Cell end = grid[grid.length - 1][grid[0].length - 1];
-
-        runAndRecord("BFS", () -> solver.solveBFS(start, end));
-        runAndRecord("DFS", () -> solver.solveDFS(start, end));
-        runAndRecord("Dijkstra", () -> solver.solveDijkstra(start, end));
-        runAndRecord("A*", () -> solver.solveAStar(start, end));
-        JOptionPane.showMessageDialog(this, "Perbandingan Selesai!");
-    }
-
-    private void runAndRecord(String name, AlgorithmRunner runner) {
-        long startT = System.nanoTime();
-        List<Cell> path = runner.run();
-        long endT = System.nanoTime();
-        double durationMs = (endT - startT) / 1_000_000.0;
-
-        if (path != null && !path.isEmpty()) {
-            int cost = calculateCost(path);
-            tableModel.addRow(new Object[]{name, path.size(), cost, String.format("%.2f", durationMs), "Done"});
-        } else {
-            tableModel.addRow(new Object[]{name, "-", "-", "-", "Failed"});
-        }
-    }
-
-    private int calculateCost(List<Cell> path) {
-        int total = 0;
-        for (Cell c : path) total += c.weight;
-        return total;
-    }
-
-    private void runPathAnimation(int pathSize) {
-        if (animationTimer != null && animationTimer.isRunning()) animationTimer.stop();
-        final int[] stepsDrawn = {0};
-        int speedDelay = 30; // Sedikit dipercepat karena area samping biasanya lebih ramping
-
-        animationTimer = new Timer(speedDelay, e -> {
-            mazePanel.incrementPathIndex();
-            stepsDrawn[0]++;
-            if (stepsDrawn[0] >= pathSize + 5) {
-                ((Timer)e.getSource()).stop();
-                updateTableStatusToFinished();
-            }
-        });
-        animationTimer.start();
-    }
-
-    private void updateTableStatusToFinished() {
-        if (tableModel.getRowCount() > 0) {
-            int lastRow = tableModel.getRowCount() - 1;
-            if ("Animating...".equals(tableModel.getValueAt(lastRow, 4))) {
-                tableModel.setValueAt("Finished", lastRow, 4);
-            }
-        }
-    }
-
-    private void stopTimer() {
-        if (animationTimer != null) animationTimer.stop();
-    }
-
     private void resetAnimation() {
-        stopTimer();
+        if (animationTimer != null) animationTimer.stop();
         mazePanel.resetAnimation();
     }
 
-    private void setupAlgoButton(JButton btn, String algo) {
-        btn.setEnabled(false);
-        btn.addActionListener(e -> solveMaze(algo));
-    }
-
-    private void enableControls(boolean enable) {
-        terrainBtn.setEnabled(enable);
-        bfsBtn.setEnabled(enable);
-        dfsBtn.setEnabled(enable);
-        dijkstraBtn.setEnabled(enable);
-        aStarBtn.setEnabled(enable);
-        compareBtn.setEnabled(enable);
-    }
-
-    interface AlgorithmRunner {
-        List<Cell> run();
+    private void toggleButtons(boolean b) {
+        JButton[] btns = {terrainBtn, bfsBtn, dfsBtn, dijkstraBtn, aStarBtn, resetBtn};
+        for(JButton btn : btns) btn.setEnabled(b);
     }
 }
