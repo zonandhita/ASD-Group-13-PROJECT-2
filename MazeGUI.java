@@ -26,65 +26,87 @@ public class MazeGUI extends JFrame {
 
         setTitle("Labirin Dashboard - Analisis Algoritma");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLayout(new BorderLayout());
+        setLayout(new BorderLayout(10, 10)); // Memberikan jarak antar komponen
 
-        // --- Panel Atas: Pengaturan Grid dan Tombol Algoritma ---
-        JPanel topContainer = new JPanel(new GridLayout(2, 1));
+        // ========================================================
+        // 1. SIDE PANEL (DASHBOARD SAMPING)
+        // ========================================================
+        JPanel sidePanel = new JPanel();
+        sidePanel.setLayout(new BoxLayout(sidePanel, BoxLayout.Y_AXIS));
+        sidePanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        sidePanel.setPreferredSize(new Dimension(220, 0));
 
-        // Baris Atas: Input Ukuran dan Inisialisasi
-        JPanel row1 = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 10));
-        row1.add(new JLabel("Lebar:"));
+        // --- Grup Pengaturan ---
+        JPanel configPanel = new JPanel(new GridLayout(0, 2, 5, 5));
+        configPanel.setBorder(BorderFactory.createTitledBorder("Pengaturan Grid"));
+        configPanel.setMaximumSize(new Dimension(200, 100));
+
+        configPanel.add(new JLabel("Lebar:"));
         widthSpinner = new JSpinner(new SpinnerNumberModel(25, 5, 60, 1));
-        row1.add(widthSpinner);
+        configPanel.add(widthSpinner);
 
-        row1.add(new JLabel("Tinggi:"));
+        configPanel.add(new JLabel("Tinggi:"));
         heightSpinner = new JSpinner(new SpinnerNumberModel(25, 5, 60, 1));
-        row1.add(heightSpinner);
+        configPanel.add(heightSpinner);
 
+        // --- Tombol Aksi Utama ---
         generateBtn = new JButton("Buat Labirin");
+        generateBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
         generateBtn.addActionListener(e -> generateMaze());
-        row1.add(generateBtn);
 
-        terrainBtn = new JButton("Acak Medan (Bobot)");
+        terrainBtn = new JButton("Acak Medan");
+        terrainBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
         terrainBtn.setEnabled(false);
         terrainBtn.addActionListener(e -> randomizeTerrain());
-        row1.add(terrainBtn);
 
-        // Baris Bawah: Seleksi Algoritma Pencarian Jalur
-        JPanel row2 = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 5));
-        bfsBtn = new JButton("BFS"); setupAlgoButton(bfsBtn, "BFS"); row2.add(bfsBtn);
-        dfsBtn = new JButton("DFS"); setupAlgoButton(dfsBtn, "DFS"); row2.add(dfsBtn);
-        dijkstraBtn = new JButton("Dijkstra"); setupAlgoButton(dijkstraBtn, "Dijkstra"); row2.add(dijkstraBtn);
-        aStarBtn = new JButton("A*"); setupAlgoButton(aStarBtn, "A*"); row2.add(aStarBtn);
+        // --- Grup Algoritma ---
+        JPanel algoPanel = new JPanel(new GridLayout(0, 1, 5, 5));
+        algoPanel.setBorder(BorderFactory.createTitledBorder("Algoritma"));
 
-        row2.add(Box.createHorizontalStrut(20));
+        bfsBtn = new JButton("BFS"); setupAlgoButton(bfsBtn, "BFS"); algoPanel.add(bfsBtn);
+        dfsBtn = new JButton("DFS"); setupAlgoButton(dfsBtn, "DFS"); algoPanel.add(dfsBtn);
+        dijkstraBtn = new JButton("Dijkstra"); setupAlgoButton(dijkstraBtn, "Dijkstra"); algoPanel.add(dijkstraBtn);
+        aStarBtn = new JButton("A*"); setupAlgoButton(aStarBtn, "A*"); algoPanel.add(aStarBtn);
+
         compareBtn = new JButton("BANDINGKAN SEMUA");
-        compareBtn.setBackground(new Color(255, 165, 0)); // Warna oranye untuk menonjolkan fitur
-        compareBtn.setFont(new Font("SansSerif", Font.BOLD, 11));
+        compareBtn.setBackground(new Color(255, 165, 0));
+        compareBtn.setFont(new Font("SansSerif", Font.BOLD, 10));
         compareBtn.setEnabled(false);
         compareBtn.addActionListener(e -> compareAllAlgorithms());
-        row2.add(compareBtn);
 
-        resetBtn = new JButton("Reset");
+        resetBtn = new JButton("Reset Visual");
         resetBtn.addActionListener(e -> resetAnimation());
-        row2.add(resetBtn);
 
-        topContainer.add(row1);
-        topContainer.add(row2);
-        add(topContainer, BorderLayout.NORTH);
+        // Menyusun komponen ke panel samping
+        sidePanel.add(configPanel);
+        sidePanel.add(Box.createRigidArea(new Dimension(0, 10)));
+        sidePanel.add(generateBtn);
+        sidePanel.add(Box.createRigidArea(new Dimension(0, 5)));
+        sidePanel.add(terrainBtn);
+        sidePanel.add(Box.createRigidArea(new Dimension(0, 15)));
+        sidePanel.add(algoPanel);
+        sidePanel.add(Box.createRigidArea(new Dimension(0, 10)));
+        sidePanel.add(compareBtn);
+        sidePanel.add(Box.createVerticalGlue()); // Mendorong tombol reset ke bawah
+        sidePanel.add(resetBtn);
 
-        // --- Panel Tengah: Area Visualisasi Labirin ---
+        add(sidePanel, BorderLayout.WEST);
+
+        // ========================================================
+        // 2. CENTER PANEL (AREA LABIRIN)
+        // ========================================================
         mazePanel = new MazePanel();
         add(mazePanel, BorderLayout.CENTER);
 
-        // --- Panel Bawah: Tabel Data Statistik ---
-        String[] columnNames = {"Algoritma", "Jumlah Langkah", "Total Bobot", "Waktu (ms)", "Status"};
+        // ========================================================
+        // 3. BOTTOM PANEL (TABEL HASIL)
+        // ========================================================
+        String[] columnNames = {"Algoritma", "Langkah", "Bobot", "Waktu (ms)", "Status"};
         tableModel = new DefaultTableModel(columnNames, 0);
         resultsTable = new JTable(tableModel);
-        resultsTable.setEnabled(false); // Tabel hanya untuk melihat data, bukan input
+        resultsTable.setEnabled(false);
         resultsTable.setRowHeight(20);
 
-        // Mengatur agar teks di dalam sel tabel berada di tengah
         DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
         centerRenderer.setHorizontalAlignment(JLabel.CENTER);
         for(int i=0; i<resultsTable.getColumnCount(); i++){
@@ -92,16 +114,14 @@ public class MazeGUI extends JFrame {
         }
 
         JScrollPane scrollPane = new JScrollPane(resultsTable);
-        scrollPane.setPreferredSize(new Dimension(0, 130));
+        scrollPane.setPreferredSize(new Dimension(0, 120));
         add(scrollPane, BorderLayout.SOUTH);
 
         pack();
+        setMinimumSize(new Dimension(800, 600)); // Ukuran minimal agar dashboard samping pas
         setLocationRelativeTo(null);
     }
 
-    /**
-     * Membuat labirin baru dan menyiapkan objek solver berdasarkan ukuran input.
-     */
     private void generateMaze() {
         int width = (Integer) widthSpinner.getValue();
         int height = (Integer) heightSpinner.getValue();
@@ -112,31 +132,24 @@ public class MazeGUI extends JFrame {
         randomizeTerrain();
         enableControls(true);
         resetAnimation();
-        tableModel.setRowCount(0); // Membersihkan tabel statistik sebelumnya
+        tableModel.setRowCount(0);
     }
 
-    /**
-     * Memberikan variasi bobot (medan) pada setiap sel untuk menguji algoritma Dijkstra/A*.
-     */
     private void randomizeTerrain() {
         if (grid == null) return;
         resetAnimation();
-        for (int y = 0; y < grid.length; y++) {
-            for (int x = 0; x < grid[0].length; x++) {
-                // Pastikan titik start (0,0) dan finish (end) selalu memiliki bobot normal (1)
-                if ((x == 0 && y == 0) || (x == grid[0].length-1 && y == grid.length-1)) {
-                    grid[y][x].weight = 1;
+        for (int y = 0; y < grid[0].length; y++) {
+            for (int x = 0; x < grid.length; x++) {
+                if ((x == 0 && y == 0) || (x == grid.length-1 && y == grid[0].length-1)) {
+                    grid[x][y].weight = 1;
                 } else {
-                    grid[y][x].setRandomTerrain();
+                    grid[x][y].setRandomTerrain();
                 }
             }
         }
         mazePanel.repaint();
     }
 
-    /**
-     * Menjalankan algoritma tunggal dan memulai proses animasi jalur.
-     */
     private void solveMaze(String algorithm) {
         if (grid == null) return;
         stopTimer();
@@ -147,7 +160,6 @@ public class MazeGUI extends JFrame {
         List<Cell> path = null;
         long startTime = System.nanoTime();
 
-        // Pemilihan fungsi pencarian berdasarkan nama tombol
         switch (algorithm) {
             case "BFS": path = solver.solveBFS(start, end); break;
             case "DFS": path = solver.solveDFS(start, end); break;
@@ -167,9 +179,6 @@ public class MazeGUI extends JFrame {
         }
     }
 
-    /**
-     * Menjalankan semua algoritma secara berurutan untuk membandingkan efisiensi.
-     */
     private void compareAllAlgorithms() {
         if (grid == null) return;
         stopTimer();
@@ -182,7 +191,7 @@ public class MazeGUI extends JFrame {
         runAndRecord("DFS", () -> solver.solveDFS(start, end));
         runAndRecord("Dijkstra", () -> solver.solveDijkstra(start, end));
         runAndRecord("A*", () -> solver.solveAStar(start, end));
-        JOptionPane.showMessageDialog(this, "Perbandingan Selesai! Lihat data pada tabel.");
+        JOptionPane.showMessageDialog(this, "Perbandingan Selesai!");
     }
 
     private void runAndRecord(String name, AlgorithmRunner runner) {
@@ -205,27 +214,19 @@ public class MazeGUI extends JFrame {
         return total;
     }
 
-    /**
-     * Mengatur jalannya visualisasi titik demi titik pada MazePanel.
-     * Semakin tinggi nilai speedDelay, semakin lambat animasinya.
-     */
     private void runPathAnimation(int pathSize) {
         if (animationTimer != null && animationTimer.isRunning()) animationTimer.stop();
         final int[] stepsDrawn = {0};
-
-        int speedDelay = 50; // Milliseconds per langkah
+        int speedDelay = 30; // Sedikit dipercepat karena area samping biasanya lebih ramping
 
         animationTimer = new Timer(speedDelay, e -> {
             mazePanel.incrementPathIndex();
             stepsDrawn[0]++;
-
-            // Memberikan sedikit jeda setelah animasi selesai sebelum merubah status tabel
             if (stepsDrawn[0] >= pathSize + 5) {
                 ((Timer)e.getSource()).stop();
                 updateTableStatusToFinished();
             }
         });
-
         animationTimer.start();
     }
 
