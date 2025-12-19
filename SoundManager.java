@@ -5,9 +5,6 @@ import java.io.IOException;
 public class SoundManager {
     private Clip backsoundClip;
 
-    /**
-     * Memutar musik latar secara terus-menerus (looping).
-     */
     public void playBacksound(String filePath) {
         try {
             File soundFile = new File(filePath);
@@ -20,7 +17,6 @@ public class SoundManager {
             backsoundClip = AudioSystem.getClip();
             backsoundClip.open(audioIn);
 
-            // Memutar terus menerus
             backsoundClip.loop(Clip.LOOP_CONTINUOUSLY);
             backsoundClip.start();
 
@@ -29,9 +25,6 @@ public class SoundManager {
         }
     }
 
-    /**
-     * Berhenti memutar musik latar.
-     */
     public void stopBacksound() {
         if (backsoundClip != null && backsoundClip.isRunning()) {
             backsoundClip.stop();
@@ -39,9 +32,6 @@ public class SoundManager {
         }
     }
 
-    /**
-     * Memutar SFX (suara pendek) satu kali.
-     */
     public void playSFX(String filePath) {
         new Thread(() -> {
             try {
