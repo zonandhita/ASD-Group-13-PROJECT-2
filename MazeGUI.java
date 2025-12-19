@@ -8,6 +8,7 @@ public class MazeGUI extends JFrame {
     private MazePanel mazePanel;
     private MazeSolver solver;
     private Timer animationTimer;
+    private SoundManager soundManager = new SoundManager(); // Inisialisasi SoundManager
 
     private JButton generateBtn, terrainBtn, bfsBtn, dfsBtn, dijkstraBtn, aStarBtn, resetBtn, compareAllBtn;
     private JSpinner widthSpinner, heightSpinner;
@@ -32,8 +33,19 @@ public class MazeGUI extends JFrame {
         createCenterPanel();
         createBottomStatusBar();
 
+        // MULAI MEMUTAR BACKSOUND SAAT APLIKASI DIBUKA
+        // Pastikan file backsound2.wav ada di folder resources
+        soundManager.playBacksound("resources/backsound2.wav");
+
         setSize(1200, 800);
         setLocationRelativeTo(null);
+    }
+
+    // Menghentikan musik saat jendela ditutup
+    @Override
+    public void dispose() {
+        soundManager.stopBacksound();
+        super.dispose();
     }
 
     private void createSideDashboard() {
@@ -65,14 +77,12 @@ public class MazeGUI extends JFrame {
         sidePanel.add(configContainer);
         sidePanel.add(Box.createRigidArea(new Dimension(0, 20)));
 
-        // Tombol Buat Labirin (Emas - Teks Hitam)
         generateBtn = createStyledButton("🏰 BUAT LABIRIN", COLOR_ACCENT, Color.BLACK);
         generateBtn.addActionListener(e -> generateMaze());
         sidePanel.add(generateBtn);
 
         sidePanel.add(Box.createRigidArea(new Dimension(0, 8)));
 
-        // Tombol Acak Medan (Terang - Teks Hitam)
         terrainBtn = createStyledButton("🌍 ACAK MEDAN", COLOR_BTN_LIGHT, Color.BLACK);
         terrainBtn.addActionListener(e -> randomizeTerrain());
         sidePanel.add(terrainBtn);
@@ -90,7 +100,6 @@ public class MazeGUI extends JFrame {
         algoGrid.setOpaque(false);
         algoGrid.setMaximumSize(new Dimension(270, 90));
 
-        // Tombol Algoritma (Terang - Teks Hitam)
         bfsBtn = createStyledButton("BFS", COLOR_BTN_LIGHT, Color.BLACK);
         dfsBtn = createStyledButton("DFS", COLOR_BTN_LIGHT, Color.BLACK);
         dijkstraBtn = createStyledButton("DIJKSTRA", COLOR_BTN_LIGHT, Color.BLACK);
@@ -107,7 +116,6 @@ public class MazeGUI extends JFrame {
 
         sidePanel.add(Box.createRigidArea(new Dimension(0, 15)));
 
-        // Tombol Bandingkan Semua (Merah Gelap - Teks Putih)
         compareAllBtn = createStyledButton("📊 BANDINGKAN SEMUA", new Color(180, 40, 40), Color.WHITE);
         compareAllBtn.addActionListener(e -> runComparison());
         sidePanel.add(compareAllBtn);
@@ -123,7 +131,6 @@ public class MazeGUI extends JFrame {
 
         sidePanel.add(Box.createVerticalGlue());
 
-        // Tombol Reset Visual (Abu-abu Tua - Teks Putih)
         resetBtn = createStyledButton("🔄 RESET VISUAL", new Color(70, 70, 80), Color.WHITE);
         resetBtn.addActionListener(e -> resetAnimation());
         sidePanel.add(resetBtn);
@@ -136,7 +143,7 @@ public class MazeGUI extends JFrame {
         JButton btn = new JButton(text);
         btn.setFont(new Font("SansSerif", Font.BOLD, 12));
         btn.setBackground(bg);
-        btn.setForeground(fg); // Warna teks diatur secara spesifik di sini
+        btn.setForeground(fg);
         btn.setFocusPainted(false);
         btn.setOpaque(true);
         btn.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
@@ -150,7 +157,7 @@ public class MazeGUI extends JFrame {
         JSpinner spinner = new JSpinner(new SpinnerNumberModel(val, 5, 100, 1));
         JComponent editor = spinner.getEditor();
         JFormattedTextField tf = ((JSpinner.DefaultEditor) editor).getTextField();
-        tf.setForeground(Color.BLACK); // Teks angka di spinner jadi hitam
+        tf.setForeground(Color.BLACK);
         tf.setBackground(Color.WHITE);
         tf.setFont(new Font("SansSerif", Font.BOLD, 12));
         return spinner;
@@ -190,7 +197,6 @@ public class MazeGUI extends JFrame {
         add(statusPanel, BorderLayout.SOUTH);
     }
 
-    // --- LOGIKA PROGRAM ---
     private void generateMaze() {
         int w = (int) widthSpinner.getValue();
         int h = (int) heightSpinner.getValue();
