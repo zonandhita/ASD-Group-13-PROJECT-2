@@ -8,9 +8,10 @@ public class MazePanel extends JPanel {
     private int cellSize = 25;
     private List<Cell> currentPath = new ArrayList<>();
 
-    // --- VARIABEL BARU UNTUK ANIMASI ---
-    private int pathDrawLimit = 0; // Berapa banyak cell yang boleh digambar saat ini
+    // Mengontrol jumlah langkah jalur yang ditampilkan ke layar untuk efek animasi
+    private int pathDrawLimit = 0;
 
+    // Definisi palet warna untuk tipe medan (Terrain)
     private final Color COLOR_GRASS = new Color(225, 255, 225);
     private final Color COLOR_MUD = new Color(210, 180, 140);
     private final Color COLOR_WATER = new Color(173, 216, 230);
@@ -20,6 +21,9 @@ public class MazePanel extends JPanel {
         setBackground(Color.WHITE);
     }
 
+    /**
+     * Memperbarui data grid labirin dan mereset status visual.
+     */
     public void setMaze(Cell[][] grid) {
         this.grid = grid;
         this.currentPath.clear();
@@ -27,17 +31,22 @@ public class MazePanel extends JPanel {
         repaint();
     }
 
+    /**
+     * Menyiapkan jalur hasil pencarian algoritma untuk dianimasikan.
+     */
     public void setPath(List<Cell> path) {
         this.currentPath = path;
-        this.pathDrawLimit = 0; // Mulai dari 0 (belum digambar)
-        // repaint() dipanggil oleh Timer di GUI
+        this.pathDrawLimit = 0;
     }
 
-    // Dipanggil Timer untuk menambah panjang ular/path
+    /**
+     * Menambah jumlah sel yang digambar satu per satu.
+     * Fungsi ini dipanggil secara berkala oleh Timer di MazeGUI.
+     */
     public void incrementPathIndex() {
         if (currentPath != null && pathDrawLimit < currentPath.size()) {
             pathDrawLimit++;
-            repaint();
+            repaint(); // Memicu penggambaran ulang setiap ada penambahan langkah
         }
     }
 
@@ -47,7 +56,6 @@ public class MazePanel extends JPanel {
         repaint();
     }
 
-    // Getter standar
     public Cell[][] getGrid() { return grid; }
     public Cell getStartCell() { return grid[0][0]; }
     public Cell getEndCell() { return grid[grid.length-1][grid[0].length-1]; }
@@ -58,7 +66,10 @@ public class MazePanel extends JPanel {
         if (grid == null) return;
 
         Graphics2D g2d = (Graphics2D) g;
-        // Hitung ulang size
+        // Mengaktifkan Antialiasing agar garis tembok dan lingkaran jalur terlihat halus
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+        // Menghitung ukuran sel secara dinamis berdasarkan ukuran jendela yang tersedia
         int width = getWidth();
         int height = getHeight();
         int cols = grid.length;
@@ -66,40 +77,43 @@ public class MazePanel extends JPanel {
         cellSize = Math.min(width / cols, height / rows);
         if (cellSize < 5) cellSize = 5;
 
-        // 1. GAMBAR MAP & TEMBOK
+        // --- TAHAP 1: Menggambar Lantai (Medan) dan Tembok ---
         for (int x = 0; x < cols; x++) {
             for (int y = 0; y < rows; y++) {
                 Cell cell = grid[x][y];
                 int px = x * cellSize;
                 int py = y * cellSize;
 
+                // Menentukan warna berdasarkan bobot sel
                 if (cell.weight == 1) g2d.setColor(COLOR_GRASS);
                 else if (cell.weight == 5) g2d.setColor(COLOR_MUD);
                 else if (cell.weight == 10) g2d.setColor(COLOR_WATER);
 
-                // Start & End
+                // Menandai titik Start (Hijau) dan Finish (Merah)
                 if (x == 0 && y == 0) g2d.setColor(Color.GREEN);
                 else if (x == cols-1 && y == rows-1) g2d.setColor(Color.RED);
 
                 g2d.fillRect(px, py, cellSize, cellSize);
 
+                // Menggambar garis tembok jika status dinding sel bernilai true
                 g2d.setColor(Color.BLACK);
                 g2d.setStroke(new BasicStroke(2));
-                if (cell.walls[0]) g2d.drawLine(px, py, px + cellSize, py);
-                if (cell.walls[1]) g2d.drawLine(px + cellSize, py, px + cellSize, py + cellSize);
-                if (cell.walls[2]) g2d.drawLine(px + cellSize, py + cellSize, px, py + cellSize);
-                if (cell.walls[3]) g2d.drawLine(px, py + cellSize, px, py);
+                if (cell.walls[0]) g2d.drawLine(px, py, px + cellSize, py); // Atas
+                if (cell.walls[1]) g2d.drawLine(px + cellSize, py, px + cellSize, py + cellSize); // Kanan
+                if (cell.walls[2]) g2d.drawLine(px + cellSize, py + cellSize, px, py + cellSize); // Bawah
+                if (cell.walls[3]) g2d.drawLine(px, py + cellSize, px, py); // Kiri
             }
         }
 
-        // 2. GAMBAR PATH (ANIMASI BERTAHAP)
-        // Hanya gambar path dari index 0 sampai pathDrawLimit
+        // --- TAHAP 2: Menggambar Jalur Solusi (Animasi) ---
         if (currentPath != null && !currentPath.isEmpty()) {
-            g2d.setColor(Color.BLUE);
+            g2d.setColor(new Color(0, 102, 204)); // Biru tua untuk jalur
             for (int i = 0; i < pathDrawLimit && i < currentPath.size(); i++) {
                 Cell c = currentPath.get(i);
                 int px = c.x * cellSize;
                 int py = c.y * cellSize;
+
+                // Menggambar bulatan di tengah sel
                 int dotSize = cellSize / 2;
                 int offset = (cellSize - dotSize) / 2;
                 g2d.fillOval(px + offset, py + offset, dotSize, dotSize);
