@@ -1,13 +1,17 @@
 import java.awt.*;
 
 public class Cell implements Comparable<Cell> {
-    // Koordinat & Data Tembok
+    // Menyimpan posisi sel dalam grid (indeks baris dan kolom)
     public int x, y;
-    public boolean[] walls = {true, true, true, true}; // Top, Right, Bottom, Left
 
-    // Algoritma Data (Bobot & Pathfinding)
-    public int weight = 1; // 1=Grass, 5=Mud, 10=Water
+    // Status tembok pada empat sisi: [0]=Atas, [1]=Kanan, [2]=Bawah, [3]=Kiri
+    public boolean[] walls = {true, true, true, true};
+
+    // Penentuan bobot jalur: 1 (Normal), 5 (Sedang/Lumpur), 10 (Sulit/Air)
+    public int weight = 1;
     private boolean visited = false;
+
+    // Variabel pendukung untuk algoritma pencarian jalur (A* atau Dijkstra)
     public Cell parent;
     public int g, h, f;
 
@@ -16,9 +20,7 @@ public class Cell implements Comparable<Cell> {
         this.y = y;
     }
 
-    // ==========================================
-    // BAGIAN INI UNTUK MEMPERBAIKI ERROR DI MAZEPANEL
-    // ==========================================
+    // --- Akses Posisi ---
 
     public int getX() {
         return x;
@@ -28,21 +30,19 @@ public class Cell implements Comparable<Cell> {
         return y;
     }
 
-    // Konversi array walls[] ke method has...Wall()
+    // --- Manajemen Status Tembok ---
+
     public boolean hasTopWall() { return walls[0]; }
     public boolean hasRightWall() { return walls[1]; }
     public boolean hasBottomWall() { return walls[2]; }
     public boolean hasLeftWall() { return walls[3]; }
 
-    // Jika MazeGenerator butuh menghapus tembok
     public void removeTopWall() { walls[0] = false; }
     public void removeRightWall() { walls[1] = false; }
     public void removeBottomWall() { walls[2] = false; }
     public void removeLeftWall() { walls[3] = false; }
 
-    // ==========================================
-    // DATA ALGORITMA
-    // ==========================================
+    // --- Logika Algoritma & Terrain ---
 
     public boolean isVisited() {
         return visited;
@@ -52,6 +52,10 @@ public class Cell implements Comparable<Cell> {
         this.visited = visited;
     }
 
+    /**
+     * Mengatur tipe medan secara acak berdasarkan probabilitas:
+     * 60% Rumput, 30% Lumpur, 10% Air.
+     */
     public void setRandomTerrain() {
         double r = Math.random();
         if (r < 0.6) weight = 1;
@@ -59,25 +63,30 @@ public class Cell implements Comparable<Cell> {
         else weight = 10;
     }
 
-    // Untuk PriorityQueue (Dijkstra/A*)
+    /**
+     * Digunakan oleh PriorityQueue untuk menentukan urutan prioritas sel
+     * berdasarkan nilai total cost (f) terkecil.
+     */
     @Override
     public int compareTo(Cell other) {
         return Integer.compare(this.f, other.f);
     }
 
-    // Method Draw (Opsional, jika dipanggil manual)
+    /**
+     * Render visual sel dan temboknya ke dalam komponen grafis.
+     */
     public void draw(Graphics g2d, int size) {
         int xPos = x * size;
         int yPos = y * size;
 
-        // Warna Terrain
-        if (weight == 1) g2d.setColor(new Color(220, 255, 220));
-        else if (weight == 5) g2d.setColor(new Color(139, 69, 19));
-        else if (weight == 10) g2d.setColor(new Color(135, 206, 235));
+        // Visualisasi warna berdasarkan bobot terrain
+        if (weight == 1) g2d.setColor(new Color(220, 255, 220));      // Hijau muda (Grass)
+        else if (weight == 5) g2d.setColor(new Color(139, 69, 19));   // Cokelat (Mud)
+        else if (weight == 10) g2d.setColor(new Color(135, 206, 235)); // Biru (Water)
 
         g2d.fillRect(xPos, yPos, size, size);
 
-        // Gambar Tembok
+        // Menggambar garis tembok jika statusnya true
         g2d.setColor(Color.BLACK);
         if (walls[0]) g2d.drawLine(xPos, yPos, xPos + size, yPos);
         if (walls[1]) g2d.drawLine(xPos + size, yPos, xPos + size, yPos + size);
