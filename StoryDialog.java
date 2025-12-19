@@ -20,19 +20,19 @@ public class StoryDialog extends JDialog {
             {
                     "THE CHALLENGE",
                     "The maze contains three types of terrain:\n\n" +
-                            "🟢 GRASS - Easy to walk through (Cost: 1)\n" +
-                            "🟤 MUD - Slows you down significantly (Cost: 5)\n" +
-                            "🔵 WATER - Very difficult to cross (Cost: 10)\n\n" +
+                            "GRASS - Easy to walk through (Cost: 1)\n" +
+                            "MUD - Slows you down significantly (Cost: 5)\n" +
+                            "WATER - Very difficult to cross (Cost: 10)\n\n" +
                             "Each step costs energy based on the terrain type!"
             },
             {
                     "YOUR MISSION",
                     "Navigate from the GREEN START to the RED TREASURE!\n\n" +
                             "Choose your pathfinding algorithm wisely:\n\n" +
-                            "• BFS - Finds shortest path by number of steps\n" +
-                            "• DFS - Explores deeply before backtracking\n" +
-                            "• DIJKSTRA - Finds cheapest terrain path\n" +
-                            "• A* - Intelligent pathfinding with heuristics\n\n" +
+                            "BFS - Finds shortest path by number of steps\n" +
+                            "DFS - Explores deeply before backtracking\n" +
+                            "DIJKSTRA - Finds cheapest terrain path\n" +
+                            "A* - Intelligent pathfinding with heuristics\n\n" +
                             "Good luck, adventurer!"
             }
     };
