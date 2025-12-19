@@ -36,7 +36,6 @@ public class MazePanel extends JPanel {
         }
     }
 
-    // METHOD BARU: Digunakan MazeGUI untuk cek status animasi
     public int getPathDrawLimit() {
         return pathDrawLimit;
     }
